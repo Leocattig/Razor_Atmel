@@ -136,7 +136,30 @@ State Machine Function Definitions
 /* Wait for ??? */
 static void UserApp1SM_Idle(void)
 {
-
+  static u32 u32i=0;
+  static u32 blink=500;
+  static u32 u32Counter=0;
+  static bool bLightIsOn=FALSE;
+  u32Counter++;
+  if(u32Counter==blink)
+  {
+    u32Counter=0;
+    if(bLightIsOn)
+    {
+      HEARTBEAT_OFF();
+      bLightIsOn=FALSE;
+    }
+    else
+    {
+      HEARTBEAT_ON();
+      bLightIsOn=TRUE;
+    }
+    u32i++;
+  }
+  if(u32i==2000/blink)
+  {
+    blink=blink/2;
+    u32i=0;
 } /* end UserApp1SM_Idle() */
     
 

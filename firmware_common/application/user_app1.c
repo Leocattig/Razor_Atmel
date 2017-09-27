@@ -160,6 +160,7 @@ static void UserApp1SM_Idle(void)
   {
     blink=blink/2;
     u32i=0;
+  }
 } /* end UserApp1SM_Idle() */
     
 

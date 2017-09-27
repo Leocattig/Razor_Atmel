@@ -138,29 +138,33 @@ static void UserApp1SM_Idle(void)
 {
   static u32 u32Counter1=0;
   static u32 u32Counter2=0;
-  static u8 u8point=10;
+  static u8 u8point=1;
   static u8 u8i=0;
-  u8 u8n=10;
+  static u8 u8n=1;
   u32Counter1++;
   u32Counter2++;
   if(u32Counter1==u8point)
   {
     HEARTBEAT_ON();
   }
-  if(u32Counter2==100)
+  if(u32Counter2==10)
   {
     HEARTBEAT_OFF();
     u32Counter1=0;
     u32Counter2=0;
-    u8point=u8point+u8n;
+    u8i++;
   }
-  if(u8point==100)
+  if(u8i==10)
   {
-   u8n=-10;
+    u8point=u8point+u8n;
   }
   if(u8point==10)
   {
-    u8n=10;
+   u8n=-1;
+  }
+  if(u8point==1)
+  {
+    u8n=1;
   }
 } /* end UserApp1SM_Idle() */
     

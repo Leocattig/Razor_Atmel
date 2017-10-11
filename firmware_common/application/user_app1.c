@@ -87,7 +87,16 @@ Promises:
 */
 void UserApp1Initialize(void)
 {
- 
+  LedOff(CYAN);
+  LedOff(GREEN);
+  LedOff(YELLOW);
+  LedOff(ORANGE);
+  LedOff(PURPLE);
+  LedOff(BLUE);
+  LedOff(RED);
+  LedOff(WHITE);
+  
+
   /* If good initialization, set state to Idle */
   if( 1 )
   {
@@ -136,7 +145,71 @@ State Machine Function Definitions
 /* Wait for ??? */
 static void UserApp1SM_Idle(void)
 {
-
+  static LedNumberType aeLed[] = {WHITE,PURPLE, BLUE, CYAN, GREEN, YELLOW, ORANGE, RED};
+  static LedRateType aLedPWM[] = {20,14,10,6,4,3,2,1};
+  static u32 u32blinkcounter = 0;
+  static u8 u8counter = 0;
+  static u8 u8ledlevel = 0;
+  static u8 u8pwmindex = 0;
+  static u32 cycleTime = 1600;
+  u32blinkcounter++;
+  if(u8ledlevel==0)
+  {
+    LedPWM(WHITE,LED_PWM_100);
+  }
+  if(u32blinkcounter==cycleTime)
+  {
+    LedOff(aeLed[u8ledlevel]);
+    u8ledlevel++;
+    u8pwmindex++;
+    LedPWM(aeLed[u8ledlevel],aLedPWM[u8pwmindex]);
+    u32blinkcounter=0;
+    cycleTime=cycleTime/2 + 50;
+  }
+  if(u8ledlevel==8)
+  {
+    u8ledlevel=0;
+    u8pwmindex=0;
+    cycleTime = 1600;
+    u8counter++;
+  }
+  
+  if(u8counter==8)
+  {
+    u8counter=0;
+  }
+  if(u8counter & 0x01)
+  {
+    LedOn(LCD_RED);
+  }
+   else
+   {
+     LedOff(LCD_RED);
+   }
+  if(u8counter & 0x02)
+  {
+    LedOn(LCD_GREEN);
+  }
+   else
+   {
+     LedOff(LCD_GREEN);
+   }
+  if(u8counter & 0x04)
+  {
+    LedOn(LCD_BLUE);
+  }
+   else
+   {
+     LedOff(LCD_BLUE);
+   }
+  
+ 
+  
+  
+    
+    
+    
+  
 } /* end UserApp1SM_Idle() */
     
 

@@ -136,7 +136,146 @@ State Machine Function Definitions
 /* Wait for ??? */
 static void UserApp1SM_Idle(void)
 {
-
+  static bool bresetpassword = FALSE;
+  static u8 au8pinnum1[10]={1,2,3,1,2,3};
+  static u8 au8pinnum2[10];
+  static u8 u8index=0;
+  static u8 u8index1=0;
+  static u8 u8index2=0;
+  static u8 u8index3=0;
+  static u8 u8mode=0;
+  static u8 u8counter=0;
+  static u8 u8counter2=0;
+  if(IsButtonHeld(BUTTON3,2000))
+    {
+      ButtonAcknowledge(BUTTON3);
+      bresetpassword = TRUE;
+      LedOff(RED);
+      LedOff(GREEN);
+      LedBlink(RED,LED_2HZ);
+      LedBlink(GREEN,LED_2HZ);
+    }
+  
+  if(u8index1==10)
+  {
+  bresetpassword = FALSE;
+  }
+  if(bresetpassword)
+    {
+      if(WasButtonPressed(BUTTON0))
+      {
+        ButtonAcknowledge(BUTTON0);
+        au8pinnum1[u8index1]=1;
+        u8index1++;
+      }
+      if(WasButtonPressed(BUTTON1))
+      {
+        ButtonAcknowledge(BUTTON1);
+        au8pinnum1[u8index1]=2;
+        u8index1++;
+      }
+      if(WasButtonPressed(BUTTON2))
+      {
+        ButtonAcknowledge(BUTTON2);
+        au8pinnum1[u8index1]=3;
+        u8index1++;
+      }
+    }
+  
+  for(u8index;u8index<sizeof(au8pinnum1);u8index++)
+  {
+   if(au8pinnum1[u8index]==1 || au8pinnum1[u8index]==2 || au8pinnum1[u8index]==3)
+    {
+     u8counter2++;
+    }
+  }   /*calculate the number of array elements*/
+  u8index=0;  
+  if(WasButtonPressed(BUTTON3))
+  {
+    ButtonAcknowledge(BUTTON3);
+    ButtonAcknowledge(BUTTON2);
+    ButtonAcknowledge(BUTTON1);
+    ButtonAcknowledge(BUTTON0); 
+    bresetpassword = FALSE;
+    u8mode++;
+    LedOff(GREEN);
+    LedOff(RED);
+    u8index1=0;
+    u8index2=0;
+  }
+  if(u8mode==1)
+  {
+    LedOn(RED);
+    if(WasButtonPressed(BUTTON0))
+    {
+      ButtonAcknowledge(BUTTON0);
+      au8pinnum2[u8index2]=1;
+      u8index2++;
+    }
+    if(WasButtonPressed(BUTTON1))
+    {
+      ButtonAcknowledge(BUTTON1);
+      au8pinnum2[u8index2]=2;
+      u8index2++;
+    }
+    if(WasButtonPressed(BUTTON2))
+    {
+      ButtonAcknowledge(BUTTON2);
+      au8pinnum2[u8index2]=3;
+      u8index2++;
+    }
+  }
+  if(u8mode==2)
+  {
+    for(u8index3;u8index3<6;u8index3++)
+    {
+      if(au8pinnum2[u8index3]==au8pinnum1[u8index3])
+      {
+        u8counter++;
+      }
+    }
+    u8index3=0;
+    if(u8counter==6)
+    {
+    LedBlink(GREEN,LED_2HZ);
+    }
+    else
+    {
+    LedBlink(RED,LED_2HZ);
+    } 
+    u8mode=0;
+    u8counter=0;
+    for(u8index=0;u8index<10;u8index++)
+    {
+      au8pinnum2[u8index]=0;
+    }
+    u8index=0;
+  }
+  
+      
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
 } /* end UserApp1SM_Idle() */
     
 

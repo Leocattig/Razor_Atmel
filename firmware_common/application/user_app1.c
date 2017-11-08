@@ -136,6 +136,60 @@ State Machine Function Definitions
 /* Wait for ??? */
 static void UserApp1SM_Idle(void)
 {
+  extern u8 G_au8DebugScanfBuffer[];  
+  extern u8 G_u8DebugScanfCharCount;
+  static u8 au8Name[]="Chenlong";
+  static u8 au8UserInputBuffer[100];
+  static u8 au8UserInput[100];
+  static u8 u8String1[]="***";
+  static u8 u8String2[]="****";
+  static u8 u8String3[]="*";
+  static u8 u8index = 0;
+  static u8 u8Number = 0;
+  
+  if(G_u8DebugScanfCharCount>0)
+  {
+    DebugScanf(au8UserInputBuffer);
+    au8UserInput[u8index]=au8UserInputBuffer[0]; 
+    u8index++;
+    if(u8index>=8)
+    {
+      if(au8UserInput[u8index-1]=='g')
+      {
+        for(u8 i=0;i<sizeof(au8Name);i++)
+        {
+          if(au8UserInput[u8index-1-i]==au8Name[7-i] && au8UserInput[u8index-1-i]=='C')
+          {
+            u8Number++;
+            if(u8Number<10)
+            {
+              DebugLineFeed();
+              DebugPrintf(u8String1);
+              DebugLineFeed();
+              DebugPrintf(u8String3);
+              DebugPrintNumber(u8Number);
+              DebugPrintf(u8String3);
+              DebugLineFeed();
+              DebugPrintf(u8String1);
+              DebugLineFeed();
+            }
+            if((u8Number>10) && (u8Number<100))
+            {
+              DebugLineFeed();
+              DebugPrintf(u8String2);
+              DebugLineFeed();
+              DebugPrintf(u8String3);
+              DebugPrintNumber(u8Number);
+              DebugPrintf(u8String3);
+              DebugLineFeed();
+              DebugPrintf(u8String2);
+              DebugLineFeed();
+            }
+           }
+          }
+        }
+      }
+    }
 
 } /* end UserApp1SM_Idle() */
     

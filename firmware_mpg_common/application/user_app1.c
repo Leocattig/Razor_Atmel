@@ -162,21 +162,8 @@ static void UserApp1SM_Idle(void)
   static u8 au8ColorMessage1[]={'W','P','B','C','G','Y','O','R'};
   static u8 au8ColorMessage2[]={WHITE,PURPLE,BLUE,CYAN,GREEN,YELLOW,ORANGE,RED};
   
-  
-  if(bBuzzer == TRUE)
-  {
-    u8counter3++;
-  }   
-  if(u8counter3 == 1000)
-  {
-    u8counter3 = 0;
-    bBuzzer = FALSE;
-    PWMAudioOff(BUZZER1);
-  }
-  
   if(G_u8DebugScanfCharCount>0)
   {
-    bBuzzer = TRUE;
     DebugScanf(au8UserInputBuffer);
     au16UserInput[u8index1]=au8UserInputBuffer[0];
     u8index1++;
@@ -228,8 +215,8 @@ static void UserApp1SM_Idle(void)
       /*the order 'enter' of exectioning operation*/
       if(au16UserInput[u8index1-1]==0x0d)
       {
-            u8mode=1;
-            DebugLineFeed();
+        u8mode=1;
+        DebugLineFeed();
       }
  
       /*determine if the command is correct*/
@@ -354,15 +341,17 @@ static void UserApp1SM_Idle(void)
           DebugPrintNumber(u8counter2);
           DebugPrintf(":");
           u8counter1=0;
-          PWMAudioSetFrequency(BUZZER1,500);
-          PWMAudioOn(BUZZER1);
         }
         u8index4=u8index1;
         u32ontime=0;
         u32offtime=0;
         u8index1=1;
         u8mode=0;
-        bflag1,bflag2,bflag3,bflag4,bflag5 = FALSE;
+        bflag1 = FALSE;
+        bflag2 = FALSE;
+        bflag3 = FALSE;
+        bflag4 = FALSE;
+        bflag5 = FALSE;
       
             
         /*no command and return to the meun*/

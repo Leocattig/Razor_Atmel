@@ -88,7 +88,7 @@ void UserApp1Initialize(void)
   DebugPrintf("Press 2 to show current USER program");
   
   /* Turn off the Debug task command processor and announce the task is ready */
-
+  DebugSetPassthrough();
   
     /* If good initialization, set state to Idle */
   if( 1 )
@@ -174,6 +174,7 @@ static void UserApp1SM_Idle(void)
           {
             au16UserInput[u8index2]='0';
           }
+        u8index1=0;
         DebugPrintf("Press 1 to program LED command sequence");
         DebugLineFeed();
         DebugPrintf("Press 2 to show current USER program");
@@ -202,7 +203,12 @@ static void UserApp1SM_Idle(void)
         bstate=FALSE;
         bstart=FALSE;
       }
-    
+      
+      /*if the backspace was pressed*/
+      if(au8UserInputBuffer[0]==0x08)
+      {
+        u8index1 = u8index1-2;
+      }
     
       /*the order 'enter' of exectioning operation*/
       if(au16UserInput[u8index1-1]==0x0d)
@@ -211,156 +217,156 @@ static void UserApp1SM_Idle(void)
             DebugLineFeed();
       }
  
-    /*determine if the command is correct*/
-    if(u8mode == 1)
-    {
-      for(u8index2=0;u8index2<8;u8index2++)
+      /*determine if the command is correct*/
+      if(u8mode == 1)
       {
-        if(au8ColorMessage1[u8index2]==au16UserInput[1])
+        for(u8index2=0;u8index2<8;u8index2++)
         {
-          bflag1=TRUE;
-          u8color=u8index2;
-        }
-      }
-        
-      if(bflag1)
-      {
-        if(au16UserInput[2]=='-')
-        {
-          bflag2=TRUE;
-        }
-      }
-      
-      if(bflag2)
-      {
-        for(u8index2=3;u8index2<u8index1;u8index2++)
-        {
-          if(au16UserInput[u8index2]=='-')
+          if(au8ColorMessage1[u8index2]==au16UserInput[1])
           {
-            u8position=u8index2;/*record the second'-' position*/
-            u8digit1=u8position-3;/*record the first figure's digit*/
+            bflag1=TRUE;
+            u8color=u8index2;
           }
         }
-
-        for(u8index2=3;u8index2<u8position;u8index2++)
-        {
-          if((au16UserInput[u8index2]<=57)&&(au16UserInput[u8index2]>=48))
-          {
-            u8counter1++;
-          }
-          if(u8counter1==u8digit1)
-          {
-            u8counter1=0;
-            bflag3=TRUE;
-          }
-        }
-      }
-      
-      if(bflag3)
-      {
-        u8digit2=u8index1-u8position-2;/*record the second figure's digit*/
-        for(u8index2=u8position+1;u8index2<u8index1-1;u8index2++)
-        {
-          if((au16UserInput[u8index2]<=57)&&(au16UserInput[u8index2]>=48))
-          {
-            u8counter1++;
-          }
-          if(u8counter1==u8digit2)
-          {
-            u8counter1=0;
-            bflag4=TRUE;
-          }
-        }
-      }
-    
-      /*calculate the ontime and offtime*/
-      if(bflag4)
-      {
-        for(u8index2=3;u8index2<u8position;u8index2++)
-        {
-          au16Time[u8index2]=au16UserInput[u8index2]-48;
-          for(u8index3=u8digit1-1;u8index3>0;u8index3--)
-          {
-            au16Time[u8index2]=au16Time[u8index2]*10;
-          }
-          u32ontime=u32ontime+au16Time[u8index2];
-          u8digit1--;
-        }
-        
-        for(u8index2=u8position+1;u8index2<u8index1-1;u8index2++)
-        {
-          au16Time[u8index2]=au16UserInput[u8index2]-48;
-          for(u8index3=u8digit2-1;u8index3>0;u8index3--)
-          {
-            au16Time[u8index2]=au16Time[u8index2]*10;
-          }
-          u32offtime=u32offtime+au16Time[u8index2];
-          u8digit2--;
-        }
-        
-        if(u32offtime > u32ontime)
-        {
-          bflag5=TRUE;
-        }
-      }
-      
-      if(bflag5)
-      {
-        command1.eLED=au8ColorMessage2[u8color];
-        command1.u32Time=u32ontime;
-        command1.bOn=TRUE;
-        command1.eCurrentRate=LED_PWM_50;
-        
-        command2.eLED=au8ColorMessage2[u8color];
-        command2.u32Time=u32offtime;
-        command2.bOn=FALSE;
-        command2.eCurrentRate=LED_PWM_100;
-      
-        u8counter2++;
-        DebugPrintNumber(u8counter2);
-        DebugPrintf(":");
-        LedDisplayAddCommand(USER_LIST,&command1);
-        LedDisplayAddCommand(USER_LIST,&command2);
-        u8index5=u8index1;
-        u8counter++;
-      }
-      
-      /*the command is wrong*/
-      else if(au16UserInput[1]!=0x0d)
-      {
-        DebugPrintf("Invalid command: incorrect format. Please use L-ONTIME-OFFTIME");
-        DebugLineFeed();
-        DebugPrintNumber(u8counter2);
-        DebugPrintf(":");
-        u8counter1=0;
-      }
-      u8index4=u8index1;
-      u32ontime=0;
-      u32offtime=0;
-      u8index1=1;
-      u8mode=0;
-      bflag1,bflag2,bflag3,bflag4,bflag5 = FALSE;
-    
           
-      /*no command and return to the meun*/
-      if(au16UserInput[1]==0x0d) 
-      { 
-        for(u8index2=0;u8index2<u8index4;u8index2++)
+        if(bflag1)
         {
-          au16UserInput[u8index2]='0';
+          if(au16UserInput[2]=='-')
+          {
+            bflag2=TRUE;
+          }
         }
-        bstate=TRUE;
-        bstart=TRUE;
-        u8index1=0;
-        DebugLineFeed();
-        DebugPrintf("Press 1 to program LED command sequence");
-        DebugLineFeed();
-        DebugPrintf("Press 2 to show current USER program");
-        DebugLineFeed();
-        DebugLineFeed();
+        
+        if(bflag2)
+        {
+          for(u8index2=3;u8index2<u8index1;u8index2++)
+          {
+            if(au16UserInput[u8index2]=='-')
+            {
+              u8position=u8index2;/*record the second'-' position*/
+              u8digit1=u8position-3;/*record the first figure's digit*/
+            }
+          }
+
+          for(u8index2=3;u8index2<u8position;u8index2++)
+          {
+            if((au16UserInput[u8index2]<=57)&&(au16UserInput[u8index2]>=48))
+            {
+              u8counter1++;
+            }
+            if(u8counter1==u8digit1)
+            {
+              u8counter1=0;
+              bflag3=TRUE;
+            }
+          }
+        }
+        
+        if(bflag3)
+        {
+          u8digit2=u8index1-u8position-2;/*record the second figure's digit*/
+          for(u8index2=u8position+1;u8index2<u8index1-1;u8index2++)
+          {
+            if((au16UserInput[u8index2]<=57)&&(au16UserInput[u8index2]>=48))
+            {
+              u8counter1++;
+            }
+            if(u8counter1==u8digit2)
+            {
+              u8counter1=0;
+              bflag4=TRUE;
+            }
+          }
+        }
+      
+        /*calculate the ontime and offtime*/
+        if(bflag4)
+        {
+          for(u8index2=3;u8index2<u8position;u8index2++)
+          {
+            au16Time[u8index2]=au16UserInput[u8index2]-48;
+            for(u8index3=u8digit1-1;u8index3>0;u8index3--)
+            {
+              au16Time[u8index2]=au16Time[u8index2]*10;
+            }
+            u32ontime=u32ontime+au16Time[u8index2];
+            u8digit1--;
+          }
+          
+          for(u8index2=u8position+1;u8index2<u8index1-1;u8index2++)
+          {
+            au16Time[u8index2]=au16UserInput[u8index2]-48;
+            for(u8index3=u8digit2-1;u8index3>0;u8index3--)
+            {
+              au16Time[u8index2]=au16Time[u8index2]*10;
+            }
+            u32offtime=u32offtime+au16Time[u8index2];
+            u8digit2--;
+          }
+          
+          if(u32offtime > u32ontime)
+          {
+            bflag5=TRUE;
+          }
+        }
+        
+        if(bflag5)
+        {
+          command1.eLED=au8ColorMessage2[u8color];
+          command1.u32Time=u32ontime;
+          command1.bOn=TRUE;
+          command1.eCurrentRate=LED_PWM_50;
+          LedDisplayAddCommand(USER_LIST,&command1);
+          
+          command2.eLED=au8ColorMessage2[u8color];
+          command2.u32Time=u32offtime;
+          command2.bOn=FALSE;
+          command2.eCurrentRate=LED_PWM_100;
+          LedDisplayAddCommand(USER_LIST,&command2);
+        
+          u8counter2++;
+          DebugPrintNumber(u8counter2);
+          DebugPrintf(":");
+          u8index5=u8index1;
+          u8counter++;
+        }
+        
+        /*the command is wrong*/
+        else if(au16UserInput[1]!=0x0d)
+        {
+          DebugPrintf("Invalid command: incorrect format. Please use L-ONTIME-OFFTIME");
+          DebugLineFeed();
+          DebugPrintNumber(u8counter2);
+          DebugPrintf(":");
+          u8counter1=0;
+        }
+        u8index4=u8index1;
+        u32ontime=0;
+        u32offtime=0;
+        u8index1=1;
+        u8mode=0;
+        bflag1,bflag2,bflag3,bflag4,bflag5 = FALSE;
+      
+            
+        /*no command and return to the meun*/
+        if(au16UserInput[1]==0x0d) 
+        { 
+          for(u8index2=0;u8index2<u8index4;u8index2++)
+          {
+            au16UserInput[u8index2]='0';
+          }
+          bstate=TRUE;
+          bstart=TRUE;
+          u8index1=0;
+          DebugLineFeed();
+          DebugPrintf("Press 1 to program LED command sequence");
+          DebugLineFeed();
+          DebugPrintf("Press 2 to show current USER program");
+          DebugLineFeed();
+          DebugLineFeed();
+        }
       }
     }
-  }
         
   /*exection operation2: current USER program*/
   if(au16UserInput[0]=='2')

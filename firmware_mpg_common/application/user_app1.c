@@ -93,9 +93,28 @@ Requires:
 Promises:
   - 
 */
+
+
+/*calculate XOR*/
+void UserApp1Fun(u8 *u8pointer,u8 u8counter1)
+{
+  for(int i=1;i<(u8counter1-1);i++)
+  {
+    *u8pointer = *u8pointer ^ *(u8pointer+i);
+  }
+  *(u8pointer+4) = *u8pointer;
+}
+
+
+
 void UserApp1Initialize(void)
 {
   u8 au8WelcomeMessage[] = "ANT Master";
+  static u8 u8array[5] = {0x01,0x01,0x03,0x04};
+  u8* u8pointer = u8array;
+  static u8 u8counter = 0;
+  u8counter = strlen(u8array);
+  UserApp1Fun(u8pointer,u8counter);
 
   /* Write a weclome message on the LCD */
 #if EIE1

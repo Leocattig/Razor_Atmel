@@ -83,7 +83,7 @@ bool AntQueueBroadcastMessage(AntChannelNumberType eChannel_, u8 *pu8Data_);
 bool AntQueueAcknowledgedMessage(AntChannelNumberType eChannel_, u8 *pu8Data_);
 
 bool AntReadAppMessageBuffer(void);
-
+void UserApp1Fun(u8 *u8pointer,u8 u8counter1);
 /*--------------------------------------------------------------------------------------------------------------------*/
 /* Protected functions                                                                                                */
 /*--------------------------------------------------------------------------------------------------------------------*/

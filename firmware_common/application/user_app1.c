@@ -87,6 +87,16 @@ Promises:
 */
 void UserApp1Initialize(void)
 {
+  LedOff(CYAN);
+  LedOff(GREEN);
+  LedOff(YELLOW);
+  LedOff(ORANGE);
+  LedOff(PURPLE);
+  LedOff(BLUE);
+  LedOff(RED);
+  LedOff(WHITE);
+  LCDCommand(LCD_CLEAR_CMD);
+
  
   /* If good initialization, set state to Idle */
   if( 1 )
@@ -136,6 +146,83 @@ State Machine Function Definitions
 /* Wait for ??? */
 static void UserApp1SM_Idle(void)
 {
+  extern u8 G_au8DebugScanfBuffer[];  
+  extern u8 G_u8DebugScanfCharCount;
+
+  static u8 au8UserInputBuffer[100];
+  static bool bfleg = FALSE;
+  static u16 u16counter = 0;
+  static u8 au8UserInput[100];
+  static u8 u8index=0;
+  if(G_u8DebugScanfCharCount>0)
+ {
+   DebugScanf(au8UserInputBuffer);
+   au8UserInput[u8index]=au8UserInputBuffer[0]; 
+   u8index++;
+ }
+  
+  if(WasButtonPressed(BUTTON1) || (au8UserInput[u8index-2]=='1')&&(au8UserInput[u8index-1]==0x0d))
+    {
+      ButtonAcknowledge(BUTTON1);
+     
+        bfleg = FALSE;
+        u8index = 0;
+        DebugPrintf("Entering state 1");
+        DebugLineFeed();
+        LCDMessage(LINE1_START_ADDR, "STATE 1");
+        LedOn(CYAN);
+        LedOn(PURPLE);
+        LedOn(BLUE);
+        LedOn(WHITE);
+        LedOff(GREEN);
+        LedOff(YELLOW);
+        LedOff(ORANGE);
+        LedOff(RED);
+        LedOn(LCD_RED);
+        LedOff(LCD_GREEN);
+        LedOn(LCD_BLUE);
+        PWMAudioOff(BUZZER1);
+      
+    }
+  if(WasButtonPressed(BUTTON2) || (au8UserInput[u8index-2]=='2')&&(au8UserInput[u8index-1]==0x0d))
+    {
+      ButtonAcknowledge(BUTTON2);
+      
+        bfleg = TRUE;
+        u8index = 0;
+        LedOff(CYAN);
+        LedOff(PURPLE);
+        LedOff(BLUE);
+        LedOff(WHITE);
+        DebugPrintf("Entering state 2");
+        DebugLineFeed();
+        LCDMessage(LINE1_START_ADDR, "STATE 2");
+        LedBlink(GREEN,LED_1HZ);
+        LedBlink(YELLOW,LED_2HZ);
+        LedBlink(ORANGE,LED_4HZ);
+        LedBlink(RED,LED_8HZ);
+        LedOn(LCD_RED);
+        LedOn(LCD_GREEN);
+        LedOff(LCD_BLUE);
+        PWMAudioSetFrequency(BUZZER1, 200);
+      }
+  if(bfleg)
+  {
+    u16counter++;
+    if(u16counter<=100)
+      {
+        PWMAudioOn(BUZZER1);
+      }
+      if(u16counter>100)
+      {
+        PWMAudioOff(BUZZER1);
+      }
+      if(u16counter==1000)
+      {
+        u16counter = 0;
+      }
+  }
+  
 
 } /* end UserApp1SM_Idle() */
     

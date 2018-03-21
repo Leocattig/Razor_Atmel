@@ -160,7 +160,7 @@ static void UserApp1SM_Idle(void)
    au8UserInput[u8index]=au8UserInputBuffer[0]; 
    u8index++;
  }
-  
+  /*state1*/
   if(WasButtonPressed(BUTTON1) || (au8UserInput[u8index-2]=='1')&&(au8UserInput[u8index-1]==0x0d))
     {
       ButtonAcknowledge(BUTTON1);
@@ -184,6 +184,7 @@ static void UserApp1SM_Idle(void)
         PWMAudioOff(BUZZER1);
       
     }
+  /*state2*/
   if(WasButtonPressed(BUTTON2) || (au8UserInput[u8index-2]=='2')&&(au8UserInput[u8index-1]==0x0d))
     {
       ButtonAcknowledge(BUTTON2);
@@ -206,6 +207,7 @@ static void UserApp1SM_Idle(void)
         LedOff(LCD_BLUE);
         PWMAudioSetFrequency(BUZZER1, 200);
       }
+  /*buzzer on or off*/
   if(bfleg)
   {
     u16counter++;

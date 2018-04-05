@@ -59,7 +59,7 @@ Variable names shall start with "UserApp1_" and be declared as static.
 ***********************************************************************************************************************/
 static fnCode_type UserApp1_StateMachine;            /* The state machine function pointer */
 //static u32 UserApp1_u32Timeout;                      /* Timeout counter used across states */
-
+AntAssignChannelInfoType localgroab;
 
 /**********************************************************************************************************************
 Function Definitions
@@ -87,7 +87,24 @@ Promises:
 */
 void UserApp1Initialize(void)
 {
- 
+  localgroab.AntChannel = ANT_CHANNEL_0;
+  localgroab.AntChannelType = CHANNEL_TYPE_MASTER;
+  localgroab.AntNetwork = ANT_NETWORK_NUMBER_BYTES;/*change*/
+  localgroab.AntNetworkKey[8] = ANT_DEFAULT_NETWORK_KEY;/*change*/
+  localgroab.AntDeviceIdLo = 0xda;
+  localgroab.AntDeviceIdHi = 0x0a;
+  localgroab.AntDeviceType = ANT_DEVICE_TYPE_DEFAULT;
+  localgroab.AntTransmissionType = ANT_TRANSMISSION_TYPE_DEFAULT;
+  localgroab.AntChannelPeriodLo = ANT_CHANNEL_PERIOD_LO_DEFAULT;/*8192/32768*/
+  localgroab.AntChannelPeriodHi = ANT_CHANNEL_PERIOD_HI_DEFAULT;/*8192/32768*/
+  localgroab.AntFrequency = ANT_FREQUENCY_DEFAULT;
+  localgroab.AntTxPower = ANT_TX_POWER_DEFAULT;
+  localgroab.AntFlags = _ANT_FLAGS_CHANNEL_OPEN;
+  
+  
+  
+  
+  
   /* If good initialization, set state to Idle */
   if( 1 )
   {
@@ -136,6 +153,7 @@ State Machine Function Definitions
 /* Wait for ??? */
 static void UserApp1SM_Idle(void)
 {
+  
 
 } /* end UserApp1SM_Idle() */
     

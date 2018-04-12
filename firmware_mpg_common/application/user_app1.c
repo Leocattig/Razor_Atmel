@@ -219,7 +219,9 @@ static void UserApp1SM_Idle(void)
 {
   static u8 au8TestMessage[] = {0, 0, 0, 0, 0xA5, 0, 0, 0};
   u8 au8DataContent[] = "xxxxxxxxxxxxxxxx";
-  
+  static u32 u32counter1 = 0;
+  static u32 u32counter2 = 0;
+   
   /* Check all the buttons and update au8TestMessage according to the button state */ 
   au8TestMessage[0] = 0x00;
   if( IsButtonPressed(BUTTON0) )
@@ -249,6 +251,7 @@ static void UserApp1SM_Idle(void)
   
   if( AntReadAppMessageBuffer() )
   {
+    
      /* New message from ANT task: check what it is */
     if(G_eAntApiCurrentMessageClass == ANT_DATA)
     {
@@ -265,11 +268,20 @@ static void UserApp1SM_Idle(void)
       
 #ifdef MPG2
 #endif /* MPG2 */
-      
+      /*au8TestMessage[7]++;
+      if(au8TestMessage[7] == 0)
+      {
+        au8TestMessage[6]++;
+        if(au8TestMessage[6] == 0)
+        {
+          au8TestMessage[5]++;
+        }
+      }/*set data and count*/
+      /*AntQueueBroadcastMessage(ANT_CHANNEL_USERAPP, au8TestMessage);*/
     }
     else if(G_eAntApiCurrentMessageClass == ANT_TICK)
     {
-     /* Update and queue the new message data */
+      u32counter1++;
       au8TestMessage[7]++;
       if(au8TestMessage[7] == 0)
       {
@@ -278,12 +290,32 @@ static void UserApp1SM_Idle(void)
         {
           au8TestMessage[5]++;
         }
-      }
-      AntQueueBroadcastMessage(ANT_CHANNEL_USERAPP, au8TestMessage);
+      }/*determine communication succeeded*/
+     /* Update and queue the new message data */
+    
+      if(G_au8AntApiCurrentMessageBytes[ANT_TICK_MSG_EVENT_CODE_INDEX] == 0x06)
+     {
+        u32counter2++;
+        u32counter1 = u32counter1-1;
+        au8TestMessage[0]++;
+        if(au8TestMessage[0] == 0)
+        {
+          au8TestMessage[1]++;
+          if(au8TestMessage[1] == 0)
+          {
+            au8TestMessage[2]++;
+          }
+        }
+     }/*determine communication failed*/
+      LCDMessage(LINE2_START_ADDR,&u32counter1);
+      LCDMessage(LINE2_START_ADDR+5,&u32counter2);
+      AntQueueAcknowledgedMessage(ANT_CHANNEL_USERAPP, au8TestMessage);
     }
   } /* end AntReadData() */
   
 } /* end UserApp1SM_Idle() */
+  
+  
 
 
 /*-------------------------------------------------------------------------------------------------------------------*/

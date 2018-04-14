@@ -223,26 +223,26 @@ static void UserApp1SM_Idle(void)
   static u32 u32counter2 = 0;
    
   /* Check all the buttons and update au8TestMessage according to the button state */ 
-  au8TestMessage[0] = 0x00;
+  //au8TestMessage[0] = 0x00;
   if( IsButtonPressed(BUTTON0) )
   {
     au8TestMessage[0] = 0xff;
   }
   
-  au8TestMessage[1] = 0x00;
+  //au8TestMessage[1] = 0x00;
   if( IsButtonPressed(BUTTON1) )
   {
     au8TestMessage[1] = 0xff;
   }
 
 #ifdef EIE1
-  au8TestMessage[2] = 0x00;
+  //au8TestMessage[2] = 0x00;
   if( IsButtonPressed(BUTTON2) )
   {
     au8TestMessage[2] = 0xff;
   }
 
-  au8TestMessage[3] = 0x00;
+  //au8TestMessage[3] = 0x00;
   if( IsButtonPressed(BUTTON3) )
   {
     au8TestMessage[3] = 0xff;
@@ -307,8 +307,8 @@ static void UserApp1SM_Idle(void)
           }
         }
      }/*determine communication failed*/
-      LCDMessage(LINE2_START_ADDR,&u32counter1);
-      LCDMessage(LINE2_START_ADDR+5,&u32counter2);
+      //LCDMessage(LINE2_START_ADDR,&u32counter1);
+      //LCDMessage(LINE2_START_ADDR+5,&u32counter2);
       AntQueueAcknowledgedMessage(ANT_CHANNEL_USERAPP, au8TestMessage);
     }
   } /* end AntReadData() */

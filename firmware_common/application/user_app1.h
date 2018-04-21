@@ -19,7 +19,14 @@ Header file for user_app1.c
 
 #ifndef __USER_APP1_H
 #define __USER_APP1_H
-
+#define DBM_LEVEL1          (s8)-99
+#define DBM_LEVEL2          (s8)-84
+#define DBM_LEVEL3          (s8)-76
+#define DBM_LEVEL4          (s8)-69
+#define DBM_LEVEL5          (s8)-63
+#define DBM_LEVEL6          (s8)-58
+#define DBM_LEVEL7          (s8)-54
+#define DBM_LEVEL8          (s8)-51
 /**********************************************************************************************************************
 Type Definitions
 **********************************************************************************************************************/
@@ -28,7 +35,8 @@ Type Definitions
 /**********************************************************************************************************************
 Constants / Definitions
 **********************************************************************************************************************/
-
+#define DBM_NUMBER  8
+#define ANT_CONFIGURE_TIMEOUT_MS 3000
 
 /**********************************************************************************************************************
 Function Declarations
@@ -55,6 +63,11 @@ void UserApp1RunActiveState(void);
 State Machine Declarations
 ***********************************************************************************************************************/
 static void UserApp1SM_Idle(void);    
+static void UserApp1SM_AntConfigureMaster(void);
+static void UserApp1SM_AntConfigureSlave1(void);
+static void UserApp1SM_AntConfigureSlave2(void);
+static void UserApp1SM_OpeningChannels(void);
+static void UserApp1SM_RadioActive(void);
 
 static void UserApp1SM_Error(void);         
 

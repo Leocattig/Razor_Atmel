@@ -27,6 +27,7 @@ Header file for user_app1.c
 #define DBM_LEVEL6          (s8)-58
 #define DBM_LEVEL7          (s8)-54
 #define DBM_LEVEL8          (s8)-51
+
 /**********************************************************************************************************************
 Type Definitions
 **********************************************************************************************************************/
@@ -67,7 +68,8 @@ static void UserApp1SM_AntConfigureMaster(void);
 static void UserApp1SM_AntConfigureSlave1(void);
 static void UserApp1SM_AntConfigureSlave2(void);
 static void UserApp1SM_OpeningChannels(void);
-static void UserApp1SM_RadioActive(void);
+static void UserApp1SM_SlaveActive(void);
+static void UserApp1SM_MasterActive(void);
 
 static void UserApp1SM_Error(void);         
 

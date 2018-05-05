@@ -70,6 +70,10 @@ static AntAssignChannelInfoType UserApp1_sSlaveChannel2;
 static u8 UserApp1_au8LcdStartLine1[] = "Hide and Go Seek";
 static u8 UserApp1_au8LcdStartLine2[] = "Push B0 to search";
 static u8 UserApp1_au8MasterMessage[8] = {0,0,0,0,0,0,0,0};
+static s8 s8RssiChannel0 = -99;
+static s8 s8RssiChannel1 = -99;
+static s8 s8RssiChannel2 = -99;
+static s8 s8StrongestRssi = -99;
 /**********************************************************************************************************************
 Function Definitions
 **********************************************************************************************************************/
@@ -116,21 +120,6 @@ void UserApp1Initialize(void)
   LCDMessage(LINE2_START_ADDR, UserApp1_au8LcdStartLine2);
   /* Set up the two ANT channels that will be used for the task */
   
-  /* Master (Channel 1) */
-  UserApp1_sMasterChannel.AntChannel = ANT_CHANNEL_1;
-  UserApp1_sMasterChannel.AntChannelType = CHANNEL_TYPE_MASTER;
-  UserApp1_sMasterChannel.AntChannelPeriodHi = ANT_CHANNEL_PERIOD_HI_DEFAULT;
-  UserApp1_sMasterChannel.AntChannelPeriodLo = ANT_CHANNEL_PERIOD_LO_DEFAULT;
-  
-  UserApp1_sMasterChannel.AntDeviceIdHi = 0x00;
-  UserApp1_sMasterChannel.AntDeviceIdLo = 0x22;
-  UserApp1_sMasterChannel.AntDeviceType = 1;
-  UserApp1_sMasterChannel.AntTransmissionType = 1;
-  
-  UserApp1_sMasterChannel.AntFrequency = ANT_FREQUENCY_DEFAULT;
-  UserApp1_sMasterChannel.AntTxPower = ANT_TX_POWER_DEFAULT;
-  UserApp1_sMasterChannel.AntNetwork = ANT_NETWORK_DEFAULT;
-  
   /* Slave1 (Channel 0) */
   UserApp1_sSlaveChannel1.AntChannel = ANT_CHANNEL_0;
   UserApp1_sSlaveChannel1.AntChannelType = CHANNEL_TYPE_SLAVE;
@@ -145,6 +134,21 @@ void UserApp1Initialize(void)
   UserApp1_sSlaveChannel1.AntFrequency = ANT_FREQUENCY_DEFAULT;
   UserApp1_sSlaveChannel1.AntTxPower = ANT_TX_POWER_DEFAULT;
   UserApp1_sSlaveChannel1.AntNetwork = ANT_NETWORK_DEFAULT;
+  
+  /* Master (Channel 1) */
+  UserApp1_sMasterChannel.AntChannel = ANT_CHANNEL_1;
+  UserApp1_sMasterChannel.AntChannelType = CHANNEL_TYPE_MASTER;
+  UserApp1_sMasterChannel.AntChannelPeriodHi = ANT_CHANNEL_PERIOD_HI_DEFAULT;
+  UserApp1_sMasterChannel.AntChannelPeriodLo = ANT_CHANNEL_PERIOD_LO_DEFAULT;
+  
+  UserApp1_sMasterChannel.AntDeviceIdHi = 0x00;
+  UserApp1_sMasterChannel.AntDeviceIdLo = 0x22;
+  UserApp1_sMasterChannel.AntDeviceType = 1;
+  UserApp1_sMasterChannel.AntTransmissionType = 1;
+  
+  UserApp1_sMasterChannel.AntFrequency = ANT_FREQUENCY_DEFAULT;
+  UserApp1_sMasterChannel.AntTxPower = ANT_TX_POWER_DEFAULT;
+  UserApp1_sMasterChannel.AntNetwork = ANT_NETWORK_DEFAULT;
   
   /* Slave2 (Channel 2) */
   UserApp1_sSlaveChannel2.AntChannel = ANT_CHANNEL_2;
@@ -248,7 +252,7 @@ static void UserApp1SM_AntConfigureSlave2(void)
   if(AntRadioStatusChannel(ANT_CHANNEL_2) == ANT_CONFIGURED)
   {
     //AntQueueBroadcastMessage(ANT_CHANNEL_0, UserApp1_au8MasterMessage);
-    AntQueueBroadcastMessage(ANT_CHANNEL_1, UserApp1_au8MasterMessage);
+    //AntQueueBroadcastMessage(ANT_CHANNEL_1, UserApp1_au8MasterMessage);
     //AntQueueBroadcastMessage(ANT_CHANNEL_2, UserApp1_au8MasterMessage);
     UserApp1_StateMachine = UserApp1SM_Idle;
   }
@@ -270,7 +274,7 @@ static void UserApp1SM_Idle(void)
     /* Queue the Channel Open messages and then go to wait state */
     AntOpenChannelNumber(ANT_CHANNEL_0);
     //AntOpenChannelNumber(ANT_CHANNEL_1);
-    //AntOpenChannelNumber(ANT_CHANNEL_2);
+    AntOpenChannelNumber(ANT_CHANNEL_2);
     
     UserApp1_StateMachine = UserApp1SM_OpeningChannels;    
   }
@@ -278,51 +282,114 @@ static void UserApp1SM_Idle(void)
 static void UserApp1SM_OpeningChannels(void)
 {
   /* Ensure that both channels have opened */
-  if( (AntRadioStatusChannel(ANT_CHANNEL_0) == ANT_OPEN) )
+  if( (AntRadioStatusChannel(ANT_CHANNEL_0) == ANT_OPEN) &&
+      (AntRadioStatusChannel(ANT_CHANNEL_2) == ANT_OPEN)   )
+      
   {
-    UserApp1_StateMachine = UserApp1SM_RadioActive; 
+    UserApp1_StateMachine = UserApp1SM_SlaveActive; 
+  }
+  
+  /* Check for timeout */
+      if( IsTimeUp(&UserApp1_u32Timeout, ANT_CONFIGURE_TIMEOUT_MS) )
+  {
+    LCDCommand(LCD_CLEAR_CMD);
+    LCDMessage(LINE1_START_ADDR, "Channel open failed");
+    UserApp1_StateMachine = UserApp1SM_Error;    
   }
 }
-static void UserApp1SM_RadioActive(void)
+static void UserApp1SM_SlaveActive(void)
 {
   LedNumberType aeLedDisplayLevels[] = {RED, ORANGE, YELLOW, GREEN, CYAN, BLUE, PURPLE, WHITE};
   s8 as8dBmLevels[] = {DBM_LEVEL1, DBM_LEVEL2, DBM_LEVEL3, DBM_LEVEL4, 
                        DBM_LEVEL5, DBM_LEVEL6, DBM_LEVEL7, DBM_LEVEL8};
-  u8 u8EventCode;
   
-  static s8 s8RssiChannel0 = -99;
-  static s8 s8RssiChannel1 = -99;
-  static s8 s8RssiChannel2 = -99;
-  static s8 s8StrongestRssi = -99;
   
   if( AntReadAppMessageBuffer() )
   {
     if(G_eAntApiCurrentMessageClass == ANT_DATA)
     {
-      s8RssiChanneml0 = G_sAntApiCurrentMessageExtData.s8RSSI;
-      //AntGetdBmAscii(s8RssiChannel0, &UserApp1_au8LcdInformationMessage[INDEX_MASTER_DBM]);
-      for(u8 i=0;i<DBM_NUMBER;i++)
+      if(G_sAntApiCurrentMessageExtData.u8Channel == 0)
       {
-        if(s8RssiChannel0>as8dBmLevels[i])
+        s8RssiChannel0 = G_sAntApiCurrentMessageExtData.s8RSSI;
+        
+        for(u8 i=0;i<DBM_NUMBER;i++)
         {
-          LedOn(aeLedDisplayLevels[i]);
+          if(s8RssiChannel0>as8dBmLevels[i])
+          {
+            LedOn(aeLedDisplayLevels[i]);
+          }
+        }
+        s8StrongestRssi = s8RssiChannel0;
+        if(s8StrongestRssi>DBM_LEVEL7 && s8StrongestRssi<DBM_LEVEL8)
+        {
+          LedBlink(RED,5);
+          LedBlink(ORANGE,5);
+          LedBlink(YELLOW,5);
+          LedBlink(GREEN,5);
+          LedBlink(CYAN,5);
+          LedBlink(BLUE,5);
+          LedBlink(PURPLE,5);
+          LedBlink(WHITE,5);
+          
+          //PWMAudioSetFrequency(BUZZER1,);
+          
+          //AntOpenChannelNumber(ANT_CHANNEL_1);
+          UserApp1_au8MasterMessage[0] = 1;
+          AntQueueAcknowledgedMessage(ANT_CHANNEL_0,UserApp1_au8MasterMessage);
+          //UserApp1_StateMachine = UserApp1SM_MasterActive;
+          
         }
       }
-      s8StrongestRssi = s8RssiChannel0;
-      if(s8StrongestRssi>DBM_LEVEL7 && s8StrongestRssi<DBM_LEVEL8)
+      if(G_sAntApiCurrentMessageExtData.u8Channel == 2)
       {
-        //LedBlink();
-        //PWMAudioSetFrequency(BUZZER1,);
-        if(G_sAntApiCurrentMessageExtData.u8Channel == 1)
-        {
-          UserApp1_au8MasterMessage[7]++;
-        }
+        s8RssiChannel2 = G_sAntApiCurrentMessageExtData.s8RSSI;
         
+        for(u8 i=0;i<DBM_NUMBER;i++)
+        {
+          if(s8RssiChannel2>as8dBmLevels[i])
+          {
+            LedOn(aeLedDisplayLevels[i]);
+          }
+        }
+        s8StrongestRssi = s8RssiChannel2;
+        if(s8StrongestRssi>DBM_LEVEL7 && s8StrongestRssi<DBM_LEVEL8)
+        {
+          LedBlink(RED,5);
+          LedBlink(ORANGE,5);
+          LedBlink(YELLOW,5);
+          LedBlink(GREEN,5);
+          LedBlink(CYAN,5);
+          LedBlink(BLUE,5);
+          LedBlink(PURPLE,5);
+          LedBlink(WHITE,5);
+          
+          //PWMAudioSetFrequency(BUZZER1,);
+          
+          UserApp1_au8MasterMessage[0] = 2;
+          AntQueueAcknowledgedMessage(ANT_CHANNEL_2,UserApp1_au8MasterMessage);
+          //UserApp1_StateMachine = UserApp1SM_MasterActive;
+      }
+      
+      //AntGetdBmAscii(s8RssiChannel0, &UserApp1_au8LcdInformationMessage[INDEX_MASTER_DBM]);
+ 
       }
     }
   }
 }
-
+static void UserApp1SM_MasterActive(void)
+{
+  if( AntReadAppMessageBuffer() )
+  {
+    if(G_eAntApiCurrentMessageClass == ANT_DATA)
+    {
+      s8RssiChannel1 = G_sAntApiCurrentMessageExtData.s8RSSI;
+    }
+    if(s8RssiChannel1>DBM_LEVEL7 && s8RssiChannel1<DBM_LEVEL8)
+    {
+      UserApp1_StateMachine = UserApp1SM_SlaveActive;
+    }
+  }
+}
 
 /*-------------------------------------------------------------------------------------------------------------------*/
 /* Handle an error */

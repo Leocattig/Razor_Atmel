@@ -52,6 +52,10 @@ extern volatile u32 G_u32ApplicationFlags;             /* From main.c */
 extern volatile u32 G_u32SystemTime1ms;                /* From board-specific source file */
 extern volatile u32 G_u32SystemTime1s;                 /* From board-specific source file */
 
+extern u32 G_u32AntApiCurrentMessageTimeStamp;                            // From ant_api.c
+extern AntApplicationMessageType G_eAntApiCurrentMessageClass;            // From ant_api.c
+extern u8 G_au8AntApiCurrentMessageBytes[ANT_APPLICATION_MESSAGE_BYTES];  // From ant_api.c
+extern AntExtendedDataType G_sAntApiCurrentMessageExtData;                // From ant_api.c
 
 /***********************************************************************************************************************
 Global variable definitions with scope limited to this local application.
@@ -59,6 +63,9 @@ Variable names shall start with "UserApp1_" and be declared as static.
 ***********************************************************************************************************************/
 static fnCode_type UserApp1_StateMachine;            /* The state machine function pointer */
 //static u32 UserApp1_u32Timeout;                      /* Timeout counter used across states */
+static u32 UserApp1_u32DataMsgCount = 0;
+static u32 UserApp1_u32Timeout = 0;
+static AntAssignChannelInfoType UserApp1_sSlaveChannel;
 
 
 /**********************************************************************************************************************
@@ -88,16 +95,39 @@ Promises:
 void UserApp1Initialize(void)
 {
  
-  /* If good initialization, set state to Idle */
-  if( 1 )
+  /* Slave (Channel 0) */
+  UserApp1_sSlaveChannel.AntChannel = ANT_CHANNEL_0;
+  UserApp1_sSlaveChannel.AntChannelType = 0x00;
+  UserApp1_sSlaveChannel.AntChannelPeriodHi = ANT_CHANNEL_PERIOD_HI_DEFAULT;
+  UserApp1_sSlaveChannel.AntChannelPeriodLo = ANT_CHANNEL_PERIOD_LO_DEFAULT;
+  
+  UserApp1_sSlaveChannel.AntDeviceIdHi = 0x00;
+  UserApp1_sSlaveChannel.AntDeviceIdLo = 0x22;
+  UserApp1_sSlaveChannel.AntDeviceType = 0x78;
+  UserApp1_sSlaveChannel.AntTransmissionType = 0;
+  
+  UserApp1_sSlaveChannel.AntFrequency = ANT_FREQUENCY_DEFAULT;
+  UserApp1_sSlaveChannel.AntTxPower = ANT_TX_POWER_DEFAULT;
+  UserApp1_sSlaveChannel.AntNetwork = ANT_NETWORK_DEFAULT;
+  
+  UserApp1_sSlaveChannel.AntNetworkKey[0] = 0xB9;
+  UserApp1_sSlaveChannel.AntNetworkKey[1] = 0xA5;
+  UserApp1_sSlaveChannel.AntNetworkKey[2] = 0x21;
+  UserApp1_sSlaveChannel.AntNetworkKey[3] = 0xFB;
+  UserApp1_sSlaveChannel.AntNetworkKey[4] = 0xBD;
+  UserApp1_sSlaveChannel.AntNetworkKey[5] = 0x72;
+  UserApp1_sSlaveChannel.AntNetworkKey[6] = 0xC3;
+  UserApp1_sSlaveChannel.AntNetworkKey[7] = 0x45;
+    
+  if(AntAssignChannel(&UserApp1_sSlaveChannel))
   {
-    UserApp1_StateMachine = UserApp1SM_Idle;
+    UserApp1_StateMachine = UserApp1SM_AntConfigureSlave;
   }
   else
   {
-    /* The task isn't properly initialized, so shut it down and don't run */
     UserApp1_StateMachine = UserApp1SM_Error;
   }
+
 
 } /* end UserApp1Initialize() */
 
@@ -134,14 +164,79 @@ State Machine Function Definitions
 
 /*-------------------------------------------------------------------------------------------------------------------*/
 /* Wait for ??? */
+static void UserApp1SM_AntConfigureSlave(void)
+{
+  if(AntRadioStatusChannel(ANT_CHANNEL_0) == ANT_CONFIGURED)
+  {
+    UserApp1_StateMachine = UserApp1SM_Idle;
+  }
+  
+   /* Check for timeout */
+  if( IsTimeUp(&UserApp1_u32Timeout, ANT_CONFIGURE_TIMEOUT_MS) )
+  {
+    LCDCommand(LCD_CLEAR_CMD);
+    LCDMessage(LINE1_START_ADDR, "Slave config failed");
+    UserApp1_StateMachine = UserApp1SM_Error;    
+  }
+}
+
 static void UserApp1SM_Idle(void)
 {
-
+  AntOpenChannelNumber(ANT_CHANNEL_0);
+  UserApp1_StateMachine = UserApp1SM_OpeningChannel;
 } /* end UserApp1SM_Idle() */
     
+static void UserApp1SM_OpeningChannel(void)
+{
+  if( (AntRadioStatusChannel(ANT_CHANNEL_0)) == ANT_OPEN )
+  {
+    UserApp1_StateMachine = UserApp1SM_SlaveActive;
+  }
+       
+   if( IsTimeUp(&UserApp1_u32Timeout, ANT_CONFIGURE_TIMEOUT_MS) )
+  {
+    LCDCommand(LCD_CLEAR_CMD);
+    LCDMessage(LINE1_START_ADDR, "Channel open failed");
+    UserApp1_StateMachine = UserApp1SM_Error;    
+  }
+}
+       
+static void UserApp1SM_SlaveActive(void)
+{
+  static u8 au8DataContent[] = "xxxxxxxxxxxxxxxx";
+  static u8 au8LastAntData[ANT_APPLICATION_MESSAGE_BYTES] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
+  bool bGotNewData;
+  if( AntReadAppMessageBuffer() )
+  {
+    if(G_eAntApiCurrentMessageClass == ANT_DATA)
+    {
+      UserApp1_u32DataMsgCount++;
+      
+      /* Check if the new data is the same as the old data and update as we go */
+      bGotNewData = FALSE;
+      for(u8 i = 0; i < ANT_APPLICATION_MESSAGE_BYTES; i++)
+      {
+        if(G_au8AntApiCurrentMessageBytes[i] != au8LastAntData[i])
+        {
+          bGotNewData = TRUE;
+          au8LastAntData[i] = G_au8AntApiCurrentMessageBytes[i];
 
-/*-------------------------------------------------------------------------------------------------------------------*/
-/* Handle an error */
+          au8DataContent[2 * i]     = HexToASCIICharUpper(G_au8AntApiCurrentMessageBytes[i] / 16);
+          au8DataContent[2 * i + 1] = HexToASCIICharUpper(G_au8AntApiCurrentMessageBytes[i] % 16); 
+        }
+      }
+      
+      if(bGotNewData)
+      {
+        /* We got new data: show on LCD */
+        LCDClearChars(LINE2_START_ADDR, 20); 
+        LCDMessage(LINE2_START_ADDR, au8DataContent); 
+      }
+    }
+  }
+  
+}
+
 static void UserApp1SM_Error(void)          
 {
   

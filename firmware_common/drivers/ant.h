@@ -204,10 +204,10 @@ typedef struct
 
 #define ANT_CHANNEL_PERIOD_DEC_DEFAULT    (u16)8192
 #define ANT_CHANNEL_PERIOD_HEX_DEFAULT    (u16)0x2000
-#define ANT_CHANNEL_PERIOD_HI_DEFAULT		  (u8)0x20
-#define ANT_CHANNEL_PERIOD_LO_DEFAULT		  (u8)0x00
+#define ANT_CHANNEL_PERIOD_HI_DEFAULT		  (u8)0x1F
+#define ANT_CHANNEL_PERIOD_LO_DEFAULT		  (u8)0x86
 
-#define ANT_FREQUENCY_DEFAULT						  (u8)55
+#define ANT_FREQUENCY_DEFAULT						  (u8)57
 #define ANT_TX_POWER_DEFAULT						  RADIO_TX_POWER_4DBM
 /* #### end of default channel configuration parameters ####*/
 

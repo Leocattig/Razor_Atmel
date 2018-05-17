@@ -66,7 +66,10 @@ static fnCode_type UserApp1_StateMachine;            /* The state machine functi
 static u32 UserApp1_u32DataMsgCount = 0;
 static u32 UserApp1_u32Timeout = 0;
 static AntAssignChannelInfoType UserApp1_sSlaveChannel;
-
+static arequestdata1[8] = {0x46,0xFF,0xFF,0xFF,0xFF,0x80,0x04,0x01};
+static arequestdata2[8] = {0x46,0xFF,0xFF,0xFF,0xFF,0x80,0x05,0x01};
+static arequestdata3[8] = {0x46,0xFF,0xFF,0xFF,0xFF,0x80,0x06,0x01};
+static arequestdata4[8] = {0x46,0xFF,0xFF,0xFF,0xFF,0x80,0x07,0x01};
 
 /**********************************************************************************************************************
 Function Definitions
@@ -182,8 +185,12 @@ static void UserApp1SM_AntConfigureSlave(void)
 
 static void UserApp1SM_Idle(void)
 {
-  AntOpenChannelNumber(ANT_CHANNEL_0);
-  UserApp1_StateMachine = UserApp1SM_OpeningChannel;
+  if(WasButtonPressed(BUTTON2))
+  {
+    ButtonAcknowledge(BUTTON2);
+    AntOpenChannelNumber(ANT_CHANNEL_0);
+    UserApp1_StateMachine = UserApp1SM_OpeningChannel;
+  }
 } /* end UserApp1SM_Idle() */
     
 static void UserApp1SM_OpeningChannel(void)
@@ -205,7 +212,21 @@ static void UserApp1SM_SlaveActive(void)
 {
   static u8 au8DataContent[] = "xxxxxxxxxxxxxxxx";
   static u8 au8LastAntData[ANT_APPLICATION_MESSAGE_BYTES] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
+  static u8 au8heart_rate[2] = {0,0};
+  static u8 au8heart_rate_display[3] = {0,0,0};
+  static u8 u8heart_rate = 0;
   bool bGotNewData;
+  if(WasButtonPressed(BUTTON0))
+  {
+    ButtonAcknowledge(BUTTON0);
+    AntQueueAcknowledgedMessage(ANT_CHANNEL_0,arequestdata1);
+  }
+  if(WasButtonPressed(BUTTON1))
+  {
+    ButtonAcknowledge(BUTTON1);
+    AntCloseChannelNumber(ANT_CHANNEL_0);
+    UserApp1_StateMachine = UserApp1SM_ClosingChannel;
+  }
   if( AntReadAppMessageBuffer() )
   {
     if(G_eAntApiCurrentMessageClass == ANT_DATA)
@@ -232,9 +253,45 @@ static void UserApp1SM_SlaveActive(void)
         LCDClearChars(LINE2_START_ADDR, 20); 
         LCDMessage(LINE2_START_ADDR, au8DataContent); 
       }
+      
+      if(G_au8AntApiCurrentMessageBytes[DATA_PAGE] = 0x04)
+      {
+        LCDClearChars(LINE1_START_ADDR, 20);
+        LCDMessage(LINE1_START_ADDR,Heart rate :)
+        au8heart_rate[1] = G_au8AntApiCurrentMessageBytes[7]%0x10;
+        au8heart_rate[0] = G_au8AntApiCurrentMessageBytes[7]/0x10;
+        u8heart_rate = au8heart_rate[0]*16+au8heart_rate[1];
+        au8heart_rate_display[0] = u8heart_rate/100;
+        au8heart_rate_display[1] = (u8heart_rate-au8heart_rate_display[0]*100)/10;
+        au8heart_rate_display[2] = u8heart_rate-au8heart_rate_display[0]*100-au8heart_rate_display[1]*10;
+        LCDMessage(LINE1_START_ADDR,au8heart_rate_display);
+        if(u8heart_rate>160 || u8heart_rate<60)
+        {
+          LedBlink(RED,LED_8HZ);
+        }
+        else
+        {
+          LedOff(RED);
+        }
+      }
     }
   }
   
+}
+static void UserApp1SM_ClosingChannel(void)
+{
+  if( (AntRadioStatusChannel(ANT_CHANNEL_0)) == ANT_CLOSED )
+  {
+    LCDCommand(LCD_CLEAR_CMD);
+    LCDMessage(LINE1_START_ADDR, "Please Press Button2");
+  }
+  
+  if( IsTimeUp(&UserApp1_u32Timeout, ANT_CONFIGURE_TIMEOUT_MS) )
+  {
+    LCDCommand(LCD_CLEAR_CMD);
+    LCDMessage(LINE1_START_ADDR, "Channel close failed");
+    UserApp1_StateMachine = UserApp1SM_Error;    
+  }
 }
 
 static void UserApp1SM_Error(void)          

@@ -66,11 +66,9 @@ static fnCode_type UserApp1_StateMachine;            /* The state machine functi
 static u32 UserApp1_u32DataMsgCount = 0;
 static u32 UserApp1_u32Timeout = 0;
 static AntAssignChannelInfoType UserApp1_sSlaveChannel;
-static arequestdata1[8] = {0x46,0xFF,0xFF,0xFF,0xFF,0x80,0x04,0x01};
-static arequestdata2[8] = {0x46,0xFF,0xFF,0xFF,0xFF,0x80,0x05,0x01};
-static arequestdata3[8] = {0x46,0xFF,0xFF,0xFF,0xFF,0x80,0x06,0x01};
-static arequestdata4[8] = {0x46,0xFF,0xFF,0xFF,0xFF,0x80,0x07,0x01};
+static u8 arequestdata1[8] = {0x46,0xFF,0xFF,0xFF,0xFF,0x80,0x07,0x01};
 
+/*data to sent*/
 /**********************************************************************************************************************
 Function Definitions
 **********************************************************************************************************************/
@@ -97,6 +95,8 @@ Promises:
 */
 void UserApp1Initialize(void)
 {
+  LCDCommand(LCD_CLEAR_CMD);
+  LCDMessage(LINE1_START_ADDR, "Please Press Button2");
  
   /* Slave (Channel 0) */
   UserApp1_sSlaveChannel.AntChannel = ANT_CHANNEL_0;
@@ -125,6 +125,7 @@ void UserApp1Initialize(void)
   if(AntAssignChannel(&UserApp1_sSlaveChannel))
   {
     UserApp1_StateMachine = UserApp1SM_AntConfigureSlave;
+    UserApp1_u32Timeout = G_u32SystemTime1ms;
   }
   else
   {
@@ -173,24 +174,25 @@ static void UserApp1SM_AntConfigureSlave(void)
   {
     UserApp1_StateMachine = UserApp1SM_Idle;
   }
-  
-   /* Check for timeout */
-  if( IsTimeUp(&UserApp1_u32Timeout, ANT_CONFIGURE_TIMEOUT_MS) )
+  /* Check for timeout */     
+   if( IsTimeUp(&UserApp1_u32Timeout, ANT_CONFIGURE_TIMEOUT_MS) )
   {
     LCDCommand(LCD_CLEAR_CMD);
     LCDMessage(LINE1_START_ADDR, "Slave config failed");
-    UserApp1_StateMachine = UserApp1SM_Error;    
+    UserApp1_StateMachine = UserApp1Initialize;    
   }
 }
 
 static void UserApp1SM_Idle(void)
 {
-  if(WasButtonPressed(BUTTON2))
+   if(WasButtonPressed(BUTTON2))
   {
     ButtonAcknowledge(BUTTON2);
     AntOpenChannelNumber(ANT_CHANNEL_0);
     UserApp1_StateMachine = UserApp1SM_OpeningChannel;
+    UserApp1_u32Timeout = G_u32SystemTime1ms;
   }
+  
 } /* end UserApp1SM_Idle() */
     
 static void UserApp1SM_OpeningChannel(void)
@@ -199,7 +201,7 @@ static void UserApp1SM_OpeningChannel(void)
   {
     UserApp1_StateMachine = UserApp1SM_SlaveActive;
   }
-       
+  /* Check for timeout */     
    if( IsTimeUp(&UserApp1_u32Timeout, ANT_CONFIGURE_TIMEOUT_MS) )
   {
     LCDCommand(LCD_CLEAR_CMD);
@@ -226,6 +228,7 @@ static void UserApp1SM_SlaveActive(void)
     ButtonAcknowledge(BUTTON1);
     AntCloseChannelNumber(ANT_CHANNEL_0);
     UserApp1_StateMachine = UserApp1SM_ClosingChannel;
+    UserApp1_u32Timeout = G_u32SystemTime1ms;
   }
   if( AntReadAppMessageBuffer() )
   {
@@ -254,26 +257,25 @@ static void UserApp1SM_SlaveActive(void)
         LCDMessage(LINE2_START_ADDR, au8DataContent); 
       }
       
-      if(G_au8AntApiCurrentMessageBytes[DATA_PAGE] = 0x04)
-      {
+      
         LCDClearChars(LINE1_START_ADDR, 20);
-        LCDMessage(LINE1_START_ADDR,Heart rate :)
+        LCDMessage(LINE1_START_ADDR,"Heart rate :");
         au8heart_rate[1] = G_au8AntApiCurrentMessageBytes[7]%0x10;
         au8heart_rate[0] = G_au8AntApiCurrentMessageBytes[7]/0x10;
         u8heart_rate = au8heart_rate[0]*16+au8heart_rate[1];
-        au8heart_rate_display[0] = u8heart_rate/100;
-        au8heart_rate_display[1] = (u8heart_rate-au8heart_rate_display[0]*100)/10;
-        au8heart_rate_display[2] = u8heart_rate-au8heart_rate_display[0]*100-au8heart_rate_display[1]*10;
-        LCDMessage(LINE1_START_ADDR,au8heart_rate_display);
+        au8heart_rate_display[0] = u8heart_rate/100+48;
+        au8heart_rate_display[1] = (u8heart_rate/10)%10+48;
+        au8heart_rate_display[2] = u8heart_rate%10+48;
+        LCDMessage(LINE1_START_ADDR+15,au8heart_rate_display);/*HR Display*/
         if(u8heart_rate>160 || u8heart_rate<60)
         {
-          LedBlink(RED,LED_8HZ);
+          LedBlink(RED,LED_8HZ);/*HM Alarm*/
         }
         else
         {
           LedOff(RED);
         }
-      }
+      
     }
   }
   
@@ -285,7 +287,7 @@ static void UserApp1SM_ClosingChannel(void)
     LCDCommand(LCD_CLEAR_CMD);
     LCDMessage(LINE1_START_ADDR, "Please Press Button2");
   }
-  
+  /* Check for timeout */
   if( IsTimeUp(&UserApp1_u32Timeout, ANT_CONFIGURE_TIMEOUT_MS) )
   {
     LCDCommand(LCD_CLEAR_CMD);

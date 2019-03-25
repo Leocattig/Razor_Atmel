@@ -34,6 +34,7 @@ Constants / Definitions
 Function Declarations
 **********************************************************************************************************************/
 #define ANT_CONFIGURE_TIMEOUT_MS   3000
+#define DATA_PAGE                  0
 /*--------------------------------------------------------------------------------------------------------------------*/
 /* Public functions                                                                                                   */
 /*--------------------------------------------------------------------------------------------------------------------*/
@@ -58,7 +59,7 @@ static void UserApp1SM_Idle(void);
 static void UserApp1SM_AntConfigureSlave(void);
 static void UserApp1SM_OpeningChannel(void);
 static void UserApp1SM_SlaveActive(void);
-
+static void UserApp1SM_ClosingChannel(void);
 static void UserApp1SM_Error(void);         
 
 
